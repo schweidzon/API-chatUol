@@ -32,6 +32,24 @@ try {
 }
 
 
+app.post("/participants", async (req, res) => {
+const {name} = req.body
+try {
+    const resp = await db.collection("participants").findOne({name})
+    if (resp) return res.status(409).send("Usuário já cadastrado")
+    await db.collection("participants").insertOne({name, lastStatus: hour})
+    await db.collection("messages").insertOne({from: name, to: 'Todoss', text: 'entra na sala...', type: 'status', time: hour})
+    return res.sendStatus(201)
+} catch(err) {
+    return res.sendStatus(404)
+}
+
+})
+
+
+
+
+
 const PORT = 5000
 app.listen(PORT, () => {
     console.log("Server on")
