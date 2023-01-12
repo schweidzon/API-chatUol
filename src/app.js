@@ -45,7 +45,11 @@ try {
 }
 
 })
-
+app.get("/participants", async (req, res) => {
+    const resp =  await db.collection("participants").find({}).toArray()
+    return res.send(resp)
+  
+})
 
 
 
