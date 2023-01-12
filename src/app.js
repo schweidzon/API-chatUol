@@ -50,6 +50,23 @@ app.get("/participants", async (req, res) => {
     return res.send(resp)
   
 })
+app.post("/messages", async (req, res) => {})
+app.get("/messages?:limit", async (req, res) => {
+    const user = req.headers.user
+    const limit = req.query.limit
+   
+    const resp = await db.collection("participants").findOne({name:user})
+  
+    if(Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2)) > 10) {
+        await db.collection("participants").deleteOne({name:user})
+        await db.collection("messages").insertOne({from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour})
+        return res.sendStatus(404)
+    }
+    const messages = await db.collection("messages").find({$or: [{to:'Todos'}, {to:user}, {from:user}] }).toArray()
+   
+    return res.send(messages.slice(-limit))
+})
+
 
 
 
