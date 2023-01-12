@@ -50,7 +50,12 @@ app.get("/participants", async (req, res) => {
     return res.send(resp)
   
 })
-app.post("/messages", async (req, res) => {})
+app.post("/messages", async (req, res) => {
+    
+
+   
+
+})
 app.get("/messages?:limit", async (req, res) => {
     const user = req.headers.user
     const limit = req.query.limit
@@ -66,7 +71,23 @@ app.get("/messages?:limit", async (req, res) => {
    
     return res.send(messages.slice(-limit))
 })
-
+app.post("/status", async (req, res) => {
+    const user = req.headers.user
+    const resp = await db.collection("participants").findOne({name:user})
+    if(!resp) return res.sendStatus(404)
+    await db.collection("participants").updateOne({name:user}, { $set : {lastStatus : hour}})
+    // console.log(hour.slice(-2))
+    // console.log(resp.lastStatus.slice(-2))
+    // console.log(resp)
+    // if(Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2)) > 10 ) {
+    //     await db.collection("participants").deleteOne({name:user})
+    //     await db.collection("messages").insertOne({from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour})
+    // }
+    // console.log(Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2)))
+   
+    return res.sendStatus(200)
+   
+})
 
 
 
