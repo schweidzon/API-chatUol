@@ -51,6 +51,19 @@ app.post("/participants", async (req, res) => {
 })
 app.get("/participants", async (req, res) => {
     const participants = await db.collection("participants").find({}).toArray()
+    const user = req.headers.user
+    const resp = await db.collection("participants").findOne({ name: user })
+    if (!resp) return res.sendStatus(404)
+
+    setInterval(async () => {
+        if (Date.now() - (resp.lastStatus) > 10000) {
+            await db.collection("participants").deleteOne({ name: user })
+            await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
+            return res.sendStatus(404)
+        }
+    },15000)
+
+   
     // const user =  req.headers.user
     // const resp = await db.collection("participants").findOne({ name: user })
     // console.log((Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2))))
@@ -86,13 +99,7 @@ app.get("/messages?:limit", async (req, res) => {
     const resp = await db.collection("participants").findOne({ name: user })
     
     if (!resp) return res.sendStatus(404)
-
-
-    if (Date.now() - (resp.lastStatus) > 10000) {
-        await db.collection("participants").deleteOne({ name: user })
-        await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
-        return res.sendStatus(404)
-    }
+  
 
 
     const messages = await db.collection("messages").find({ $or: [{ to: 'Todos' }, { to: user }, { from: user }] }).toArray()
