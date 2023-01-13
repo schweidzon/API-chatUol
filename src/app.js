@@ -4,24 +4,25 @@ import { MongoClient, ObjectId } from 'mongodb'
 import dotenv from 'dotenv'
 import daysjs from "dayjs"
 import { userSchema } from "../validator.js"
-
-
+import { stripHtml } from 'string-strip-html'
 
 dotenv.config()
+
 const app = express()
+
 app.use(express.json())
+
 app.use(cors())
+
 let hour
+
 setInterval(() => {
     hour = daysjs().format("HH:mm:ss")
 
-}, 1)
-
-
-
-
+}, 1) 
 
 const mongoClient = new MongoClient(process.env.DATABASE_URL)
+
 let db
 
 try {
@@ -33,11 +34,11 @@ try {
 } catch (err) {
     console.log("Não conectou ao banco de dados")
 }
-removeUser()
+
 
 
 app.post("/participants", async (req, res) => {
-    //const result = await userSchema.validateAsync(req.body)
+    
     const { name } = req.body
     try {
         const resp = await db.collection("participants").findOne({ name })
@@ -54,39 +55,13 @@ app.post("/participants", async (req, res) => {
 })
 app.get("/participants", async (req, res) => {
     const participants = await db.collection("participants").find({}).toArray()
-    // const user = req.headers.user
-    // const resp = await db.collection("participants").findOne({ name: user })
-    // if (!resp) return res.sendStatus(404)
-
-
-    // if (Date.now() - (resp.lastStatus) > 10000) {
-    //     await db.collection("participants").deleteOne({ name: user })
-    //     await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
-    //     return res.sendStatus(404)
-    // }
-
-
-
-    // const user =  req.headers.user
-    // const resp = await db.collection("participants").findOne({ name: user })
-    // console.log((Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2))))
-    // console.log(resp)
-    // setInterval(async ()=> {
-    //     if(!resp) return res.sendStatus(404)
-    //     if((Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2))) > 10) {
-    //         await db.collection("participants").deleteOne({ name: user })
-    //         await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
-
-    //         return res.sendStatus(404)
-    //     }
-
-    // }, 15000)
+   
     return res.send(participants)
 
 })
 app.post("/messages", async (req, res) => {
     const user = req.headers.user
-    const { to, text, type } = req.body
+    const { to, text, type } =req.body
 
 
     await db.collection("messages").insertOne({ from: user, to, text, type, time: hour })
@@ -108,9 +83,9 @@ app.get("/messages?:limit", async (req, res) => {
     const messages = await db.collection("messages").find({ $or: [{ to: 'Todos' }, { to: user }, { from: user }] }).toArray()
 
 
-    //const messages = await db.collection("messages").find({}).toArray()
+  
     if (limit && limit <= 0 || limit && isNaN(limit)) return res.sendStatus(422)
-    if (!limit) return res.send(messages)
+    if (!limit) return res.send(messages.reverse())
     return res.send(messages.slice(-limit).reverse())
 })
 app.post("/status", async (req, res) => {
@@ -118,14 +93,7 @@ app.post("/status", async (req, res) => {
     const resp = await db.collection("participants").findOne({ name: user })
     if (!resp) return res.sendStatus(404)
     await db.collection("participants").updateOne({ name: user }, { $set: { lastStatus: Date.now() } })
-    // console.log(hour.slice(-2))
-    // console.log(resp.lastStatus.slice(-2))
-    // console.log(resp)
-    // if(Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2)) > 10 ) {
-    //     await db.collection("participants").deleteOne({name:user})
-    //     await db.collection("messages").insertOne({from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour})
-    // }
-    // console.log(Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2)))
+   
 
     return res.sendStatus(200)
 
@@ -158,27 +126,18 @@ app.put("/messages/:id", async (req, res) => {
 })
 
 setInterval(removeUser, 15000)
+
 async function removeUser() {
 
     const part = await db.collection("participants").find({}).toArray()
 
     part.forEach(async (p) => {
-        console.log(Date.now() - p.lastStatus)
         if (Date.now() - p.lastStatus > 10000) {
             await db.collection("participants").deleteOne({ _id: ObjectId(p._id) })
             await db.collection("messages").insertOne({ from: p.name, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
         }
-    }, 15000)
-
-
-
-
-
-
+    })
 }
-
-
-
 
 const PORT = 5000
 app.listen(PORT, () => {
