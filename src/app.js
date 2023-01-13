@@ -3,7 +3,7 @@ import cors from 'cors'
 import { MongoClient, ObjectId } from 'mongodb'
 import dotenv from 'dotenv'
 import daysjs from "dayjs"
-import  {userSchema}  from "../validator.js"
+import { userSchema } from "../validator.js"
 
 
 
@@ -44,7 +44,7 @@ app.post("/participants", async (req, res) => {
         await db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: hour })
         return res.sendStatus(201)
     } catch (err) {
-     
+
         return res.sendStatus(404)
     }
 
@@ -55,15 +55,15 @@ app.get("/participants", async (req, res) => {
     const resp = await db.collection("participants").findOne({ name: user })
     if (!resp) return res.sendStatus(404)
 
-    setInterval(async () => {
-        if (Date.now() - (resp.lastStatus) > 10000) {
-            await db.collection("participants").deleteOne({ name: user })
-            await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
-            return res.sendStatus(404)
-        }
-    },15000)
 
-   
+    if (Date.now() - (resp.lastStatus) > 10000) {
+        await db.collection("participants").deleteOne({ name: user })
+        await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
+        return res.sendStatus(404)
+    }
+
+
+
     // const user =  req.headers.user
     // const resp = await db.collection("participants").findOne({ name: user })
     // console.log((Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2))))
@@ -92,21 +92,21 @@ app.post("/messages", async (req, res) => {
 
 
 app.get("/messages?:limit", async (req, res) => {
-    const user = req.headers.user  
+    const user = req.headers.user
     const limit = req.query.limit
 
 
     const resp = await db.collection("participants").findOne({ name: user })
-    
+
     if (!resp) return res.sendStatus(404)
-  
+
 
 
     const messages = await db.collection("messages").find({ $or: [{ to: 'Todos' }, { to: user }, { from: user }] }).toArray()
-    
-    
+
+
     //const messages = await db.collection("messages").find({}).toArray()
-    if(limit && limit <= 0 || limit && isNaN(limit)) return res.sendStatus(422)
+    if (limit && limit <= 0 || limit && isNaN(limit)) return res.sendStatus(422)
     if (!limit) return res.send(messages)
     return res.send(messages.slice(-limit))
 })
@@ -129,29 +129,29 @@ app.post("/status", async (req, res) => {
 })
 
 app.delete("/messages/:id", async (req, res) => {
-const {id} = req.params
-const user = req.headers.user
+    const { id } = req.params
+    const user = req.headers.user
 
-const message = await db.collection("messages").deleteOne({_id : ObjectId(id)})
-if (!message) return res.send(404)
-if(user !== message.from)  return res.sendStatus(401)
-return res.sendStatus(200)
-}) 
+    const message = await db.collection("messages").deleteOne({ _id: ObjectId(id) })
+    if (!message) return res.send(404)
+    if (user !== message.from) return res.sendStatus(401)
+    return res.sendStatus(200)
+})
 
 app.put("/messages/:id", async (req, res) => {
-const newMessage = req.body
-const user = req.headers.user
-const messageId = req.params
+    const newMessage = req.body
+    const user = req.headers.user
+    const messageId = req.params
 
 
-const message = await db.collection("messages").findOne({_id : ObjectId(messageId)})
-if(!message) return res.sendStatus(404)
+    const message = await db.collection("messages").findOne({ _id: ObjectId(messageId) })
+    if (!message) return res.sendStatus(404)
 
-if(message.from !== user) return res.sendStatus(401)
+    if (message.from !== user) return res.sendStatus(401)
 
-await db.collection("messages").updateOne({_id: ObjectId(messageId)}, {$set : {text : newMessage.text}})
+    await db.collection("messages").updateOne({ _id: ObjectId(messageId) }, { $set: { text: newMessage.text } })
 
-res.sendStatus(200)
+    res.sendStatus(200)
 })
 
 
