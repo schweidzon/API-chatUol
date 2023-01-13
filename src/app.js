@@ -38,6 +38,7 @@ app.post("/participants", async (req, res) => {
     const { name } = req.body
     try {
         const resp = await db.collection("participants").findOne({ name })
+        console.log(resp)
         if (resp) return res.sendStatus(409)
         await db.collection("participants").insertOne({ name, lastStatus: Date.now() })
         await db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: hour })
@@ -83,20 +84,22 @@ app.get("/messages?:limit", async (req, res) => {
 
 
     const resp = await db.collection("participants").findOne({ name: user })
+    
     if (!resp) return res.sendStatus(404)
 
 
-    if (Date.now() - (resp.lastStatus) > 10) {
-        await db.collection("participants").deleteOne({ name: user })
-        await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
-        return res.sendStatus(404)
-    }
+    // if (Date.now() - (resp.lastStatus) > 10) {
+    //     await db.collection("participants").deleteOne({ name: user })
+    //     await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
+    //     return res.sendStatus(404)
+    // }
 
 
     const messages = await db.collection("messages").find({ $or: [{ to: 'Todos' }, { to: user }, { from: user }] }).toArray()
+    console.log(messages)
     //const messages = await db.collection("messages").find({}).toArray()
     if (!limit) return res.send(messages)
-    return res.send(messages.slice(limit))
+    return res.send(messages.slice(-limit))
 })
 app.post("/status", async (req, res) => {
     const user = req.headers.user
