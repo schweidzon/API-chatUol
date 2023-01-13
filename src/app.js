@@ -96,12 +96,12 @@ app.get("/messages?:limit", async (req, res) => {
 
 
     const messages = await db.collection("messages").find({ $or: [{ to: 'Todos' }, { to: user }, { from: user }] }).toArray()
-    let test = messages.map((m) => { return ({to:m.to, text:m.text, type:m.type, from:m.from}) })
-    console.log(test)
+    
+    
     //const messages = await db.collection("messages").find({}).toArray()
     if(limit && limit <= 0 || limit && isNaN(limit)) return res.sendStatus(422)
-    if (!limit) return res.send(test)
-    return res.send(test.slice(-limit))
+    if (!limit) return res.send(messages)
+    return res.send(messages.slice(-limit))
 })
 app.post("/status", async (req, res) => {
     const user = req.headers.user
