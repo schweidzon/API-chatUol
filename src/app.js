@@ -19,6 +19,8 @@ setInterval(() => {
 
 
 
+
+
 const mongoClient = new MongoClient(process.env.DATABASE_URL)
 let db
 
@@ -31,6 +33,7 @@ try {
 } catch (err) {
     console.log("Não conectou ao banco de dados")
 }
+removeUser()
 
 
 app.post("/participants", async (req, res) => {
@@ -153,6 +156,28 @@ app.put("/messages/:id", async (req, res) => {
 
     res.sendStatus(200)
 })
+
+setInterval(removeUser, 15000)
+async function removeUser() {
+
+    const part = await db.collection("participants").find({}).toArray()
+
+    part.forEach(async (p) => {
+        console.log(Date.now() - p.lastStatus)
+        if (Date.now() - p.lastStatus > 10000) {
+            console.log('oi')
+
+            await db.collection("participants").deleteOne({ _id: ObjectId(p._id) })
+            await db.collection("messages").insertOne({ from: p.name, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
+        }
+    }, 15000)
+
+
+
+
+
+
+}
 
 
 
