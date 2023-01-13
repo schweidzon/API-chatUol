@@ -42,7 +42,6 @@ app.post("/participants", async (req, res) => {
     const { name } = req.body
     try {
         const resp = await db.collection("participants").findOne({ name })
-        console.log(resp)
         if (resp) return res.sendStatus(409)
         await db.collection("participants").insertOne({ name, lastStatus: Date.now() })
         await db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: hour })
@@ -67,7 +66,7 @@ app.get("/participants", async (req, res) => {
 })
 
 app.post("/messages", async (req, res) => {
-    const user = req.headers.user
+    const {user} = req.headers
     const { to, text, type } = req.body
 
     try {
@@ -85,8 +84,8 @@ app.post("/messages", async (req, res) => {
 
 
 app.get("/messages?:limit", async (req, res) => {
-    const user = req.headers.user
-    const limit = req.query.limit
+    const {user} = req.headers
+    const {limit} = req.query
 
     try {
         const resp = await db.collection("participants").findOne({ name: user })
@@ -105,7 +104,7 @@ app.get("/messages?:limit", async (req, res) => {
 })
 
 app.post("/status", async (req, res) => {
-    const user = req.headers.user
+    const {user} = req.headers
 
     try {
         const resp = await db.collection("participants").findOne({ name: user })
@@ -124,7 +123,7 @@ app.post("/status", async (req, res) => {
 
 app.delete("/messages/:id", async (req, res) => {
     const { id } = req.params
-    const user = req.headers.user
+    const {user} = req.headers
 
     try {
         const message = await db.collection("messages").deleteOne({ _id: ObjectId(id) })
@@ -143,8 +142,8 @@ app.delete("/messages/:id", async (req, res) => {
 })
 
 app.put("/messages/:id", async (req, res) => {
-    const newMessage = req.body
-    const user = req.headers.user
+    const {to, text, type} = req.body
+    const {user} = req.headers
     const messageId = req.params
 
     try {
@@ -153,7 +152,7 @@ app.put("/messages/:id", async (req, res) => {
 
         if (message.from !== user) return res.sendStatus(401)
 
-        await db.collection("messages").updateOne({ _id: ObjectId(messageId) }, { $set: { text: newMessage.text } })
+        await db.collection("messages").updateOne({ _id: ObjectId(messageId) }, { $set: { text } })
 
         res.sendStatus(200)
 
