@@ -152,7 +152,8 @@ app.put("/messages/:id", async (req, res) => {
 
         if (message.from !== user) return res.sendStatus(401)
 
-        await db.collection("messages").updateOne({ _id: ObjectId(messageId) }, { $set: { text } })
+        const result = await db.collection("messages").updateOne({ _id: ObjectId(messageId) }, { $set: { text } })
+        if(result.modifiedCount === 0) return res.status(404).send("Esta mensagem não existe")
 
         res.sendStatus(200)
 
