@@ -97,7 +97,7 @@ app.get("/messages?:limit", async (req, res) => {
     const messages = await db.collection("messages").find({ $or: [{ to: 'Todos' }, { to: user }, { from: user }] }).toArray()
     //const messages = await db.collection("messages").find({}).toArray()
     if (!limit) return res.send(messages)
-    return res.send(messages.slice(-limit))
+    return res.send(messages.slice(limit))
 })
 app.post("/status", async (req, res) => {
     const user = req.headers.user
