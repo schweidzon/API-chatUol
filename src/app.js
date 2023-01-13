@@ -1,8 +1,9 @@
 import express from 'express'
 import cors from 'cors'
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 import dotenv from 'dotenv'
 import daysjs from "dayjs"
+import  {userSchema}  from "../validator.js"
 
 
 
@@ -15,7 +16,7 @@ setInterval(() => {
     hour = daysjs().format("HH:mm:ss")
 
 }, 1)
-console.log(hour)
+
 
 
 const mongoClient = new MongoClient(process.env.DATABASE_URL)
@@ -33,45 +34,69 @@ try {
 
 
 app.post("/participants", async (req, res) => {
+    //const result = await userSchema.validateAsync(req.body)
+  
     const { name } = req.body
     try {
         const resp = await db.collection("participants").findOne({ name })
-        if (resp) return res.status(409).send("Usuário já cadastrado")
+        if (resp) return res.sendStatus(409)
         await db.collection("participants").insertOne({ name, lastStatus: hour })
         await db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: hour })
         return res.sendStatus(201)
     } catch (err) {
+     
         return res.sendStatus(404)
     }
 
 })
 app.get("/participants", async (req, res) => {
-    const resp = await db.collection("participants").find({}).toArray()
-    return res.send(resp)
+    const participants = await db.collection("participants").find({}).toArray()
+    // const user =  req.headers.user
+    // const resp = await db.collection("participants").findOne({ name: user })
+    // console.log((Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2))))
+    // console.log(resp)
+    // setInterval(async ()=> {
+    //     if(!resp) return res.sendStatus(404)
+    //     if((Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2))) > 10) {
+    //         await db.collection("participants").deleteOne({ name: user })
+    //         await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
+
+    //         return res.sendStatus(404)
+    //     }
+
+    // }, 15000)
+    return res.send(participants)
 
 })
 app.post("/messages", async (req, res) => {
     const user = req.headers.user
-    const {to, text, type}= req.body
- 
+    const { to, text, type } = req.body
+
+
     await db.collection("messages").insertOne({ from: user, to, text, type, time: hour })
     res.sendStatus(201)
 })
 
 
 app.get("/messages?:limit", async (req, res) => {
-    const user = req.headers.user
+    const user = req.headers.user  
     const limit = req.query.limit
 
+
     const resp = await db.collection("participants").findOne({ name: user })
+    if (!resp) return res.sendStatus(404)
+
 
     if (Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2)) > 10) {
         await db.collection("participants").deleteOne({ name: user })
         await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
         return res.sendStatus(404)
     }
-     const messages = await db.collection("messages").find({$or: [{to:'Todos'}, {to:user}, {from:user}] }).toArray()
+
+
+    const messages = await db.collection("messages").find({ $or: [{ to: 'Todos' }, { to: user }, { from: user }] }).toArray()
     //const messages = await db.collection("messages").find({}).toArray()
+    if (!limit) return res.send(messages)
     return res.send(messages.slice(-limit))
 })
 app.post("/status", async (req, res) => {
@@ -90,6 +115,32 @@ app.post("/status", async (req, res) => {
 
     return res.sendStatus(200)
 
+})
+
+app.delete("/messages/:id", async (req, res) => {
+const {id} = req.params
+const user = req.headers.user
+console.log(user)
+const message = await db.collection("messages").deleteOne({_id : ObjectId(id)})
+if (!message) return res.send(404)
+if(user !== message.from)  return res.sendStatus(401)
+return res.sendStatus(200)
+}) 
+
+app.put("/messages/:id", async (req, res) => {
+const newMessage = req.body
+const user = req.headers.user
+const messageId = req.params
+console.log(newMessage)
+
+const message = await db.collection("messages").findOne({_id : ObjectId(messageId)})
+if(!message) return res.sendStatus(404)
+
+if(message.from !== user) return res.sendStatus(401)
+
+await db.collection("messages").updateOne({_id: ObjectId(messageId)}, {$set : {text : newMessage.text}})
+
+res.sendStatus(200)
 })
 
 
