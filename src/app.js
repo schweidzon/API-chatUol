@@ -88,7 +88,7 @@ app.get("/messages?:limit", async (req, res) => {
     if (!resp) return res.sendStatus(404)
 
 
-    if (Date.now() - (resp.lastStatus) > 10) {
+    if (Date.now() - (resp.lastStatus) > 10000) {
         await db.collection("participants").deleteOne({ name: user })
         await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
         return res.sendStatus(404)
