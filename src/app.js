@@ -35,12 +35,11 @@ try {
 
 app.post("/participants", async (req, res) => {
     //const result = await userSchema.validateAsync(req.body)
-  
     const { name } = req.body
     try {
         const resp = await db.collection("participants").findOne({ name })
         if (resp) return res.sendStatus(409)
-        await db.collection("participants").insertOne({ name, lastStatus: hour })
+        await db.collection("participants").insertOne({ name, lastStatus: Date.now() })
         await db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: hour })
         return res.sendStatus(201)
     } catch (err) {
@@ -87,7 +86,7 @@ app.get("/messages?:limit", async (req, res) => {
     if (!resp) return res.sendStatus(404)
 
 
-    if (Number(hour.slice(-2)) - Number(resp.lastStatus.slice(-2)) > 10) {
+    if (Date.now() - (resp.lastStatus) > 10) {
         await db.collection("participants").deleteOne({ name: user })
         await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
         return res.sendStatus(404)
@@ -103,7 +102,7 @@ app.post("/status", async (req, res) => {
     const user = req.headers.user
     const resp = await db.collection("participants").findOne({ name: user })
     if (!resp) return res.sendStatus(404)
-    await db.collection("participants").updateOne({ name: user }, { $set: { lastStatus: hour } })
+    await db.collection("participants").updateOne({ name: user }, { $set: { lastStatus: Date.now() } })
     // console.log(hour.slice(-2))
     // console.log(resp.lastStatus.slice(-2))
     // console.log(resp)
