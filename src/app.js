@@ -96,11 +96,12 @@ app.get("/messages?:limit", async (req, res) => {
 
 
     const messages = await db.collection("messages").find({ $or: [{ to: 'Todos' }, { to: user }, { from: user }] }).toArray()
-    console.log(messages)
+    let test = messages.map((m) => { return ({to:m.to, text:m.text, type:m.type, from:m.from}) })
+    console.log(test)
     //const messages = await db.collection("messages").find({}).toArray()
     if(limit && limit <= 0 || limit && isNaN(limit)) return res.sendStatus(422)
-    if (!limit) return res.send(messages)
-    return res.send(messages.slice(-limit))
+    if (!limit) return res.send(test)
+    return res.send(test.slice(-limit))
 })
 app.post("/status", async (req, res) => {
     const user = req.headers.user
@@ -123,7 +124,7 @@ app.post("/status", async (req, res) => {
 app.delete("/messages/:id", async (req, res) => {
 const {id} = req.params
 const user = req.headers.user
-console.log(user)
+
 const message = await db.collection("messages").deleteOne({_id : ObjectId(id)})
 if (!message) return res.send(404)
 if(user !== message.from)  return res.sendStatus(401)
@@ -134,7 +135,7 @@ app.put("/messages/:id", async (req, res) => {
 const newMessage = req.body
 const user = req.headers.user
 const messageId = req.params
-console.log(newMessage)
+
 
 const message = await db.collection("messages").findOne({_id : ObjectId(messageId)})
 if(!message) return res.sendStatus(404)
