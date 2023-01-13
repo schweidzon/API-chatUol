@@ -111,7 +111,7 @@ app.get("/messages?:limit", async (req, res) => {
     //const messages = await db.collection("messages").find({}).toArray()
     if (limit && limit <= 0 || limit && isNaN(limit)) return res.sendStatus(422)
     if (!limit) return res.send(messages)
-    return res.send(messages.slice(-limit))
+    return res.send(messages.slice(-limit).reverse())
 })
 app.post("/status", async (req, res) => {
     const user = req.headers.user
@@ -165,8 +165,6 @@ async function removeUser() {
     part.forEach(async (p) => {
         console.log(Date.now() - p.lastStatus)
         if (Date.now() - p.lastStatus > 10000) {
-            console.log('oi')
-
             await db.collection("participants").deleteOne({ _id: ObjectId(p._id) })
             await db.collection("messages").insertOne({ from: p.name, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
         }
