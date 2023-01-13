@@ -88,11 +88,11 @@ app.get("/messages?:limit", async (req, res) => {
     if (!resp) return res.sendStatus(404)
 
 
-    // if (Date.now() - (resp.lastStatus) > 10) {
-    //     await db.collection("participants").deleteOne({ name: user })
-    //     await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
-    //     return res.sendStatus(404)
-    // }
+    if (Date.now() - (resp.lastStatus) > 10) {
+        await db.collection("participants").deleteOne({ name: user })
+        await db.collection("messages").insertOne({ from: user, to: 'Todos', text: 'sai da sala...', type: 'status', time: hour })
+        return res.sendStatus(404)
+    }
 
 
     const messages = await db.collection("messages").find({ $or: [{ to: 'Todos' }, { to: user }, { from: user }] }).toArray()
