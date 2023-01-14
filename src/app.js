@@ -41,8 +41,7 @@ try {
 
 app.post("/participants", async (req, res) => {
     const name = req.body.name
-    console.log(name)
-    console.log(stripHtml(name).result)
+    if(!name) return res.sendStatus(422)
 
     const validation = userSchema.validate(req.body, { abortEarly: false })
 
@@ -147,24 +146,21 @@ app.post("/status", async (req, res) => {
 
 })
 
+
 app.delete("/messages/:id", async (req, res) => {
     const { id } = req.params
     const { user } = req.headers
    
     try {
-        const result = await db.collection("messages").findOne({ _id: ObjectId(id) })
-        if (user !== result.from) return res.sendStatus(401)
+        const result = await db.collection("messages").findOne({ _id: ObjectId(id) })       
         if (!result) return res.sendStatus(404)
-        const message = await db.collection("messages").deleteOne({ _id: ObjectId(id) })
-        console.log(message)
-   
+        if (user !== result.from) return res.sendStatus(401)
+        await db.collection("messages").deleteOne({ _id: ObjectId(id) })
         return res.sendStatus(200)
 
     } catch (error) {
         console.log(error)
         res.status(500).send("Houve um problema no banco de dados!")
-
-
     }
 
 
