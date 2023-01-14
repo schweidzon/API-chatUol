@@ -147,11 +147,14 @@ app.post("/status", async (req, res) => {
 app.delete("/messages/:id", async (req, res) => {
     const { id } = req.params
     const { user } = req.headers
-
+   
     try {
+        const result = await db.collection("messages").findOne({ _id: ObjectId(id) })
+        if (user !== result.from) return res.sendStatus(401)
         const message = await db.collection("messages").deleteOne({ _id: ObjectId(id) })
+        console.log(message)
         if (!message) return res.send(404)
-        if (user !== message.from) return res.sendStatus(401)
+   
         return res.sendStatus(200)
 
     } catch (error) {
