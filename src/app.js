@@ -3,7 +3,8 @@ import cors from 'cors'
 import { MongoClient, ObjectId } from 'mongodb'
 import dotenv from 'dotenv'
 import daysjs from "dayjs"
-import { userSchema } from "../validator.js"
+import joi from 'joi'
+import { userSchema, messageSchema } from "../validator.js"
 import { stripHtml } from 'string-strip-html'
 
 dotenv.config()
@@ -38,8 +39,17 @@ try {
 
 
 app.post("/participants", async (req, res) => {
+    const  name  = req.body.name
+   
+    const validation = userSchema.validate(req.body, {abortEarly:false})   
 
-    const { name } = req.body
+    if(validation.error) {
+        const erros =  validation.error.details.map((err) => {
+            return err.message
+        })
+        return res.status(422).send(erros)
+    } 
+
     try {
         const resp = await db.collection("participants").findOne({ name })
         if (resp) return res.sendStatus(409)
@@ -67,10 +77,23 @@ app.get("/participants", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
     const {user} = req.headers
-    const { to, text, type } = req.body
+    const message = req.body
+    console.log(message)
+  
+
+    const validation = messageSchema.validate(message, {abortEarly:false})
+    console.log(validation)
+
+    if(validation.error) {
+        const erros =  validation.error.details.map((err) => {
+            return err.message
+        })
+        return res.status(422).send(erros)
+    } 
+        
 
     try {
-        await db.collection("messages").insertOne({ from: user, to, text, type, time: hour })
+        await db.collection("messages").insertOne({ from: user, to:message.to, text:message.text, type:message.type, time: hour })
         res.sendStatus(201)
 
     } catch (error) {
