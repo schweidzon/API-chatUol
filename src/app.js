@@ -79,26 +79,13 @@ app.post("/messages", async (req, res) => {
     const user = req.headers.user
     const result = await db.collection("participants").findOne({name : user})
    
-    if(!result) return res.sendStatus(422)   
+    if(!result || !user) return res.sendStatus(422)   
     const message = req.body
-    
-  
-
     const validationMessage = messageSchema.validate(message, {abortEarly:false})
-    const validateUser = userSchema.validate(req.headers, {allowUnknown:true})
-    console.log(validationMessage)
-
-    if(validateUser.error) {
-        const erros =  validateUser.error.details.map((err) => {
-            return err.message
-        })
-        return res.status(422).send(erros)
-    } 
-     
-    
 
     if(validationMessage.error) {
         const erros =  validationMessage.error.details.map((err) => {
+            console.log('13')
             return err.message
         })
         return res.status(422).send(erros)
