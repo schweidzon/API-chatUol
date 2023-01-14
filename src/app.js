@@ -4,7 +4,7 @@ import { MongoClient, ObjectId } from 'mongodb'
 import dotenv from 'dotenv'
 import daysjs from "dayjs"
 import joi from 'joi'
-import { userSchema, messageSchema } from "../validator.js"
+import { userSchema, messageSchema, statusSchema } from "../validator.js"
 import { stripHtml } from 'string-strip-html'
 
 dotenv.config()
@@ -53,7 +53,7 @@ app.post("/participants", async (req, res) => {
     try {
         const resp = await db.collection("participants").findOne({ name })
         if (resp) return res.sendStatus(409)
-        await db.collection("participants").insertOne({ name, lastStatus: Date.now() })
+        await db.collection("participants").insertOne({ name: name, lastStatus: Date.now() })
         await db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: hour })
         return res.sendStatus(201)
     } catch (err) {
@@ -62,6 +62,7 @@ app.post("/participants", async (req, res) => {
     }
 
 })
+
 app.get("/participants", async (req, res) => {
     try {
         const participants = await db.collection("participants").find({}).toArray()
@@ -72,11 +73,12 @@ app.get("/participants", async (req, res) => {
         res.status(500).send("Houve um problema no banco de dados!")
     }
 
-
 })
 
 app.post("/messages", async (req, res) => {
-    const {user} = req.headers
+    const user = req.headers.user
+    if(!user) return res.sendStatus(422)
+    console.log(user)
     const message = req.body
     console.log(message)
   
@@ -127,7 +129,7 @@ app.get("/messages?:limit", async (req, res) => {
 })
 
 app.post("/status", async (req, res) => {
-    const {user} = req.headers
+    const {user} = req.headers  
 
     try {
         const resp = await db.collection("participants").findOne({ name: user })
