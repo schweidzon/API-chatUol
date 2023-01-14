@@ -77,7 +77,8 @@ app.get("/participants", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
     const user = req.headers.user
-    const result = db.collection("participants").findOne({name : user}).toArray()
+    const result = await db.collection("participants").findOne({name : user})
+   
     if(!result) return res.sendStatus(422)   
     const message = req.body
     
