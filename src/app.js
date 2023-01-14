@@ -15,6 +15,7 @@ app.use(express.json())
 
 app.use(cors())
 
+
 let hour
 
 setInterval(() => {
@@ -40,6 +41,8 @@ try {
 
 app.post("/participants", async (req, res) => {
     const name = req.body.name
+    console.log(name)
+    console.log(stripHtml(name).result)
 
     const validation = userSchema.validate(req.body, { abortEarly: false })
 
@@ -53,7 +56,7 @@ app.post("/participants", async (req, res) => {
     try {
         const resp = await db.collection("participants").findOne({ name })
         if (resp) return res.sendStatus(409)
-        await db.collection("participants").insertOne({ name: name, lastStatus: Date.now() })
+        await db.collection("participants").insertOne({ name: (stripHtml(name).result).trim() , lastStatus: Date.now() })
         await db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'entra na sala...', type: 'status', time: hour })
         return res.sendStatus(201)
     } catch (err) {
@@ -93,7 +96,7 @@ app.post("/messages", async (req, res) => {
 
 
     try {
-        await db.collection("messages").insertOne({ from: user, to: message.to, text: message.text, type: message.type, time: hour })
+        await db.collection("messages").insertOne({ from: user, to: message.to, text: (stripHtml(message.text).result).trim() , type: message.type, time: hour })
         res.sendStatus(201)
 
     } catch (error) {
@@ -151,9 +154,9 @@ app.delete("/messages/:id", async (req, res) => {
     try {
         const result = await db.collection("messages").findOne({ _id: ObjectId(id) })
         if (user !== result.from) return res.sendStatus(401)
+        if (!result) return res.sendStatus(404)
         const message = await db.collection("messages").deleteOne({ _id: ObjectId(id) })
         console.log(message)
-        if (!message) return res.send(404)
    
         return res.sendStatus(200)
 
