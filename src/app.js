@@ -4,7 +4,7 @@ import { MongoClient, ObjectId } from 'mongodb'
 import dotenv from 'dotenv'
 import daysjs from "dayjs"
 import joi from 'joi'
-import { userSchema, messageSchema, statusSchema } from "../validator.js"
+import { userSchema, messageSchema } from "../validator.js"
 import { stripHtml } from 'string-strip-html'
 
 dotenv.config()
@@ -77,17 +77,27 @@ app.get("/participants", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
     const user = req.headers.user
-    if(!user) return res.sendStatus(422)
-    console.log(user)
+    const result = db.collection("participants").findOne({name : user}).toArray()
+    if(!result) return res.sendStatus(422)   
     const message = req.body
-    console.log(message)
+    
   
 
-    const validation = messageSchema.validate(message, {abortEarly:false})
-    console.log(validation)
+    const validationMessage = messageSchema.validate(message, {abortEarly:false})
+    const validateUser = userSchema.validate(req.headers, {allowUnknown:true})
+    console.log(validationMessage)
 
-    if(validation.error) {
-        const erros =  validation.error.details.map((err) => {
+    if(validateUser.error) {
+        const erros =  validateUser.error.details.map((err) => {
+            return err.message
+        })
+        return res.status(422).send(erros)
+    } 
+     
+    
+
+    if(validationMessage.error) {
+        const erros =  validationMessage.error.details.map((err) => {
             return err.message
         })
         return res.status(422).send(erros)
@@ -130,6 +140,16 @@ app.get("/messages?:limit", async (req, res) => {
 
 app.post("/status", async (req, res) => {
     const {user} = req.headers  
+
+    const validation = userSchema.validate(req.headers, {allowUnknown:true})
+
+    if(validation.error) {
+        const erros =  validation.error.details.map((err) => {
+            return err.message
+        })
+        return res.status(422).send(erros)
+    } 
+    console.log(validation)
 
     try {
         const resp = await db.collection("participants").findOne({ name: user })
