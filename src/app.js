@@ -39,16 +39,16 @@ try {
 
 
 app.post("/participants", async (req, res) => {
-    const  name  = req.body.name
-   
-    const validation = userSchema.validate(req.body, {abortEarly:false})   
+    const name = req.body.name
 
-    if(validation.error) {
-        const erros =  validation.error.details.map((err) => {
+    const validation = userSchema.validate(req.body, { abortEarly: false })
+
+    if (validation.error) {
+        const erros = validation.error.details.map((err) => {
             return err.message
         })
         return res.status(422).send(erros)
-    } 
+    }
 
     try {
         const resp = await db.collection("participants").findOne({ name })
@@ -77,23 +77,23 @@ app.get("/participants", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
     const user = req.headers.user
-    const result = await db.collection("participants").findOne({name : user})
-   
-    if(!result || !user) return res.sendStatus(422)   
-    const message = req.body
-    const validationMessage = messageSchema.validate(message, {abortEarly:false})
+    const result = await db.collection("participants").findOne({ name: user })
 
-    if(validationMessage.error) {
-        const erros =  validationMessage.error.details.map((err) => {
+    if (!result || !user) return res.sendStatus(422)
+    const message = req.body
+    const validationMessage = messageSchema.validate(message, { abortEarly: false })
+
+    if (validationMessage.error) {
+        const erros = validationMessage.error.details.map((err) => {
             console.log('13')
             return err.message
         })
         return res.status(422).send(erros)
-    } 
-        
+    }
+
 
     try {
-        await db.collection("messages").insertOne({ from: user, to:message.to, text:message.text, type:message.type, time: hour })
+        await db.collection("messages").insertOne({ from: user, to: message.to, text: message.text, type: message.type, time: hour })
         res.sendStatus(201)
 
     } catch (error) {
@@ -107,8 +107,8 @@ app.post("/messages", async (req, res) => {
 
 
 app.get("/messages?:limit", async (req, res) => {
-    const {user} = req.headers
-    const {limit} = req.query
+    const { user } = req.headers
+    const { limit } = req.query
 
     try {
         const resp = await db.collection("participants").findOne({ name: user })
@@ -127,17 +127,7 @@ app.get("/messages?:limit", async (req, res) => {
 })
 
 app.post("/status", async (req, res) => {
-    const {user} = req.headers  
-
-    const validation = userSchema.validate(req.headers, {allowUnknown:true})
-
-    if(validation.error) {
-        const erros =  validation.error.details.map((err) => {
-            return err.message
-        })
-        return res.status(422).send(erros)
-    } 
-    console.log(validation)
+    const { user } = req.headers
 
     try {
         const resp = await db.collection("participants").findOne({ name: user })
@@ -156,7 +146,7 @@ app.post("/status", async (req, res) => {
 
 app.delete("/messages/:id", async (req, res) => {
     const { id } = req.params
-    const {user} = req.headers
+    const { user } = req.headers
 
     try {
         const message = await db.collection("messages").deleteOne({ _id: ObjectId(id) })
@@ -175,8 +165,8 @@ app.delete("/messages/:id", async (req, res) => {
 })
 
 app.put("/messages/:id", async (req, res) => {
-    const {to, text, type} = req.body
-    const {user} = req.headers
+    const { to, text, type } = req.body
+    const { user } = req.headers
     const messageId = req.params
 
     try {
@@ -186,7 +176,7 @@ app.put("/messages/:id", async (req, res) => {
         if (message.from !== user) return res.sendStatus(401)
 
         const result = await db.collection("messages").updateOne({ _id: ObjectId(messageId) }, { $set: { text } })
-        if(result.modifiedCount === 0) return res.status(404).send("Esta mensagem não existe")
+        if (result.modifiedCount === 0) return res.status(404).send("Esta mensagem não existe")
 
         res.sendStatus(200)
 
